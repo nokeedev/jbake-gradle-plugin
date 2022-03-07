@@ -1,0 +1,38 @@
+plugins {
+	id 'dev.gradleplugins.java-gradle-plugin'
+	id 'dev.gradleplugins.gradle-plugin-unit-test'
+	id 'maven-publish'
+}
+
+group = 'net.nokeedev'
+
+repositories {
+	mavenCentral()
+}
+
+gradlePlugin {
+	plugins {
+		jbake {
+			id = 'net.nokeedev.jbake-site'
+			implementationClass = 'net.nokeedev.jbake.JBakePlugin'
+		}
+	}
+
+	dependencies {
+		compileOnly 'org.jbake:jbake-core:2.6.7'
+		compileOnly 'commons-configuration:commons-configuration:1.10'
+	}
+
+	compatibility {
+		minimumGradleVersion = '6.2.1'
+	}
+}
+
+test {
+	testTasks.configureEach { useJUnitPlatform() }
+	dependencies {
+		implementation platform("org.junit:junit-bom:5.8.0")
+		implementation "org.junit.jupiter:junit-jupiter"
+		implementation 'org.hamcrest:hamcrest-core:2.2'
+	}
+}

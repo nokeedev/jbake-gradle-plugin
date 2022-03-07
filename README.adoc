@@ -1,0 +1,14 @@
+= JBake plugin for Gradle
+
+This plugin allows rendering a site using https://www.jbake.org[JBake] directly from https://www.gradle.org[Gradle].
+It's spiritually connected to https://github.com/jbake-org/jbake-gradle-plugin[the official Gradle plugin] but differ in the following ways:
+
+- The JBake extension can depend on remote content, templates, assets and properties.
+- The plugin provide a `jbake` software component for publishing in Maven and Ivy.
+  Note that each JBake artifacts are published individually, e.g. content, templates, assets, properties and baked site.
+- The project allow creation of additional JBake extension to render other independent type of documentation.
+
+This plugin uses similar defaults as the official plugin.
+
+NOTE: This plugin was develop to support Nokee's development need and is only used as a local plugin.
+There is currently no intention of publishing the plugin to the Gradle Plugin Portal.
