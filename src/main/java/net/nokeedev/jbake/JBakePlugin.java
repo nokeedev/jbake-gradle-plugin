@@ -28,5 +28,10 @@ class JBakePlugin implements Plugin<Project> {
 		project.getExtensions().add(JBakeExtension.JBAKE_EXTENSION_NAME, JBakeExtensionFactory.forProject(project).create());
 		project.getPlugins().withType(PublishingPlugin.class, ignored -> jbake(project, new RegisterJBakeComponent(project)));
 		jbake(project, new JBakeDefaultLayout(project));
+		project.getTasks().register("bakePreview", JBakeServeTask.class, task -> {
+			task.getServeDirectory().convention(jbake(project).getBakeTask().flatMap(JBakeTask::getDestinationDirectory));
+			task.setDescription("Preview JBake project.");
+			task.setGroup("documentation");
+		});
 	}
 }
