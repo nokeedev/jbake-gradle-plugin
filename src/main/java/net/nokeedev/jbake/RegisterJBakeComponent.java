@@ -41,7 +41,7 @@ final class RegisterJBakeComponent implements Action<JBakeExtension> {
 			extension.getDependencies().getTemplatesElements().get(),
 			skipIfOnAnyUnpublishableArtifactType);
 		component.addVariantsFromConfiguration(
-			extension.getDependencies().getAssetsElements().get(),
+			extension.getDependencies().getContentElements().get(),
 			skipIfOnAnyUnpublishableArtifactType);
 		component.addVariantsFromConfiguration(
 			extension.getDependencies().getPropertiesElements().get(),
