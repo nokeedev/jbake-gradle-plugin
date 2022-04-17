@@ -18,6 +18,7 @@ package net.nokeedev.jbake;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.tasks.*;
@@ -33,6 +34,12 @@ public abstract class JBakeTask extends DefaultTask {
 
 	@InputDirectory
 	public abstract DirectoryProperty getSourceDirectory();
+
+	@SkipWhenEmpty
+	@InputFiles
+	public FileCollection getSources() {
+		return getSourceDirectory().dir("content").get().getAsFileTree();
+	}
 
 	@Input
 	public abstract MapProperty<String, Object> getConfigurations();
