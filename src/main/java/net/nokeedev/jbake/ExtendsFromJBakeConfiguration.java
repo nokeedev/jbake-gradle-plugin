@@ -26,5 +26,10 @@ final class ExtendsFromJBakeConfiguration implements Action<JBakeDependencies> {
 		dependencies.getContent().configure(extendsFromJBake);
 		dependencies.getTemplates().configure(extendsFromJBake);
 		dependencies.getProperties().configure(extendsFromJBake);
+
+		dependencies.getAssetsElements().configure(extendsFromJBake);
+		dependencies.getContentElements().configure(extendsFromJBake);
+		dependencies.getTemplatesElements().configure(extendsFromJBake);
+		dependencies.getPropertiesElements().configure(extendsFromJBake);
 	}
 }
