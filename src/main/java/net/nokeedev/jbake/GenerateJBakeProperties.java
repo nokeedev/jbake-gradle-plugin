@@ -38,7 +38,7 @@ public abstract class GenerateJBakeProperties extends DefaultTask {
 	@TaskAction
 	private void doGenerate() throws IOException {
 		final Properties properties = new Properties();
-		properties.putAll(getConfigurations().get());
+		getConfigurations().get().forEach((key, value) -> properties.put(key, value.toString()));
 		try (final OutputStream outStream = new FileOutputStream(getOutputFile().get().getAsFile())) {
 			properties.store(outStream, null);
 		}
