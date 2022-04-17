@@ -17,7 +17,10 @@ package net.nokeedev.jbake;
 
 import org.gradle.api.Action;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.tasks.Sync;
+
+import java.io.File;
 
 final class JBakeStageTask implements Action<Sync> {
 	private final Project project;
@@ -30,10 +33,20 @@ final class JBakeStageTask implements Action<Sync> {
 
 	@Override
 	public void execute(Sync task) {
+		task.doFirst(new AvoidMissingJBakeDirectoryWarnings());
 		task.into("content", spec -> spec.from(extension.getDependencies().getContent()).from(extension.getContent()));
 		task.into("assets", spec -> spec.from(extension.getDependencies().getAssets()).from(extension.getAssets()));
 		task.into("templates", spec -> spec.from(extension.getDependencies().getTemplates()).from(extension.getTemplates()));
 		task.setDestinationDir(project.getLayout().getBuildDirectory().dir("tmp/" + task.getName()).get().getAsFile());
 		task.setIncludeEmptyDirs(false);
+	}
+
+	private static final class AvoidMissingJBakeDirectoryWarnings implements Action<Task> {
+		@Override
+		public void execute(Task task) {
+			new File(((Sync) task).getDestinationDir(), "content").mkdirs();
+			new File(((Sync) task).getDestinationDir(), "assets").mkdirs();
+			new File(((Sync) task).getDestinationDir(), "templates").mkdirs();
+		}
 	}
 }
