@@ -18,6 +18,7 @@ package net.nokeedev.jbake;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.SkipWhenEmpty;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.process.ExecOperations;
 
@@ -31,6 +32,7 @@ public abstract class JBakeServeTask extends DefaultTask {
 		this.execOperations = execOperations;
 	}
 
+	@SkipWhenEmpty
 	@InputDirectory
 	public abstract DirectoryProperty getServeDirectory();
 
