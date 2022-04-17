@@ -19,9 +19,14 @@ import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
+import org.gradle.api.provider.ListProperty;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.bundling.Zip;
+
+import java.util.Collections;
 
 import static org.gradle.api.artifacts.type.ArtifactTypeDefinition.DIRECTORY_TYPE;
 
@@ -42,7 +47,17 @@ final class FileCollectionArtifact implements Action<Configuration> {
 			task.getDestinationDirectory().value(project.getLayout().getBuildDirectory().dir("tmp/" + task.getName())).disallowChanges();
 		});
 		zipTask.configure(task -> task.from(files));
-		configuration.getOutgoing().artifact(zipTask);
+
+		ListProperty<PublishArtifact> artifacts = project.getObjects().listProperty(PublishArtifact.class).value(project.provider(() -> {
+			if (files.getAsFileTree().isEmpty()) {
+				return Collections.emptyList();
+			} else {
+				return Collections.singletonList(new LazyPublishArtifact(zipTask));
+			}
+		}));
+		artifacts.finalizeValueOnRead();
+		artifacts.disallowChanges();
+		configuration.getOutgoing().getArtifacts().addAllLater(artifacts);
 
 		final NamedDomainObjectProvider<Sync> stageTask = project.getTasks().register(stageTaskName(configuration), Sync.class);
 		stageTask.configure(task -> task.setDestinationDir(project.getLayout().getBuildDirectory().dir("tmp/" + task.getName()).get().getAsFile()));
