@@ -41,7 +41,7 @@ final class JBakeBakeTask implements Action<JBakeTask> {
 			task.setGroup("documentation");
 			task.setDescription("Bakes with JBake");
 			task.getSourceDirectory().fileProvider(extension.getStageTask().map(Sync::getDestinationDir));
-			task.getDestinationDirectory().value(extension.getDestinationDirectory()).disallowChanges();
+			task.getDestinationDirectory().value(project.getLayout().getBuildDirectory().dir("jbake")).disallowChanges();
 			task.getConfigurations().putAll(extension.getDependencies().getProperties().flatMap(it -> it.getIncoming().getFiles().getElements()).map(new TransformEachTransformer<>(new LoadPropertiesFileIfAvailable())).map(new MergeJBakePropertiesTransformer()));
 			task.getConfigurations().put("working.directory", extension.getStageTask().map(this::relativeToProjectDirectory));
 			task.getConfigurations().putAll(extension.getConfigurations());

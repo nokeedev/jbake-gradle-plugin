@@ -57,7 +57,7 @@ public abstract class JBakeExtension {
 			.ifPresent(capability -> dependencies(new ConfigureJBakeExtensionOutgoingCapability(capability)));
 		getStageTask().configure(new JBakeStageTask(project, this));
 		getBakeTask().configure(new JBakeBakeTask(project, this));
-		getDestinationDirectory().convention(project.getLayout().getBuildDirectory().dir("jbake"));
+		getDestinationDirectory().convention(getBakeTask().flatMap(JBakeTask::getDestinationDirectory));
 	}
 
 	public abstract ConfigurableFileCollection getClasspath();
