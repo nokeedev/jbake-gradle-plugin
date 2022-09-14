@@ -15,8 +15,6 @@
  */
 package net.nokeedev.jbake;
 
-import net.nokeedev.jbake.JBakeExtension;
-import net.nokeedev.jbake.JBakeExtensionFactory;
 import org.gradle.api.Project;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.Test;
@@ -31,7 +29,7 @@ class JBakeExtensionDestinationDirectoryIntegrationTest {
 
 	@Test
 	void isConnectedWithBakeTask() {
-		subject.getDestinationDirectory().set(project.getLayout().getProjectDirectory().dir("out"));
-		assertThat(subject.getBakeTask().get().getDestinationDirectory().get().getAsFile(), aFileWithAbsolutePath(endsWith("/out")));
+		subject.getBakeTask().get().getDestinationDirectory().set(project.getLayout().getProjectDirectory().dir("out"));
+		assertThat(subject.getDestinationDirectory().get().getAsFile(), aFileWithAbsolutePath(endsWith("/out")));
 	}
 }
