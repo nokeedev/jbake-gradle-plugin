@@ -33,7 +33,7 @@ final class JBakeStageTask implements Action<Sync> {
 
 	@Override
 	public void execute(Sync task) {
-		task.doFirst(new AvoidMissingJBakeDirectoryWarnings());
+		task.doLast(new AvoidMissingJBakeDirectoryWarnings());
 		task.into("content", spec -> spec.from(extension.getDependencies().getContent()).from(extension.getContent()));
 		task.into("assets", spec -> spec.from(extension.getDependencies().getAssets()).from(extension.getAssets()));
 		task.into("templates", spec -> spec.from(extension.getDependencies().getTemplates()).from(extension.getTemplates()));
