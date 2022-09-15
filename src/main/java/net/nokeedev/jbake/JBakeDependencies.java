@@ -70,7 +70,7 @@ public final class JBakeDependencies {
 		this.propertiesElements = configurations.register(names.configurationName(CONFIGURATION_ELEMENTS_CONFIGURATION_NAME),
 			new AsConsumable(new ConfigureJBakeExtensionDescription("Configuration elements", new JBakePropertiesConfiguration(project))));
 		this.bakedElements = configurations.register(names.configurationName(BAKED_ELEMENTS_CONFIGURATION_NAME),
-			new AsConsumable(new ConfigureJBakeExtensionDescription("Baked elements", new JBakeBakedConfiguration(project))));
+			new AsConsumable(new ExcludeFromAssembleTask(new ConfigureJBakeExtensionDescription("Baked elements", new JBakeBakedConfiguration(project)))));
 	}
 
 	public NamedDomainObjectProvider<Configuration> getAssets() {
