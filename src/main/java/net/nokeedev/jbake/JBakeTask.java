@@ -21,7 +21,14 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.provider.MapProperty;
-import org.gradle.api.tasks.*;
+import org.gradle.api.tasks.Classpath;
+import org.gradle.api.tasks.IgnoreEmptyDirectories;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.SkipWhenEmpty;
+import org.gradle.api.tasks.TaskAction;
 import org.gradle.workers.ProcessWorkerSpec;
 import org.gradle.workers.WorkerExecutor;
 
@@ -36,6 +43,7 @@ public abstract class JBakeTask extends DefaultTask {
 	public abstract DirectoryProperty getSourceDirectory();
 
 	@SkipWhenEmpty
+	@IgnoreEmptyDirectories
 	@InputFiles
 	public FileCollection getSources() {
 		return getSourceDirectory().dir("content").get().getAsFileTree();
@@ -71,5 +79,4 @@ public abstract class JBakeTask extends DefaultTask {
 		parameters.getDestinationDirectory().set(getDestinationDirectory());
 		parameters.getConfigurations().set(getConfigurations());
 	}
-
 }
