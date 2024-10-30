@@ -19,7 +19,6 @@ import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.RegularFile;
-import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.TaskProvider;
 
@@ -58,7 +57,7 @@ final class AttachJBakeArtifacts implements Action<JBakeDependencies> {
 
 	private Action<Configuration> artifactIfExists(Provider<File> fileProvider) {
 		return configuration -> {
-			configuration.getOutgoing().getArtifacts().add(new LazyPublishArtifact(fileProvider));
+			configuration.getOutgoing().artifact(fileProvider);
 		};
 	}
 }
