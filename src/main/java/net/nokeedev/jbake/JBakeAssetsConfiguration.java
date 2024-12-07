@@ -16,24 +16,24 @@
 package net.nokeedev.jbake;
 
 import org.gradle.api.Action;
-import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.attributes.DocsType;
 import org.gradle.api.attributes.Usage;
+import org.gradle.api.model.ObjectFactory;
 
 final class JBakeAssetsConfiguration implements Action<Configuration> {
 	static final String JBAKE_ASSETS_USAGE_NAME = "jbake-assets";
-	private final Project project;
+	private final ObjectFactory objects;
 
-	public JBakeAssetsConfiguration(Project project) {
-		this.project = project;
+	public JBakeAssetsConfiguration(ObjectFactory objects) {
+		this.objects = objects;
 	}
 
 	@Override
 	public void execute(Configuration configuration) {
 		configuration.attributes(it -> {
-			it.attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, JBAKE_ASSETS_USAGE_NAME));
-			it.attribute(DocsType.DOCS_TYPE_ATTRIBUTE, project.getObjects().named(DocsType.class, JBAKE_ASSETS_USAGE_NAME));
+			it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, JBAKE_ASSETS_USAGE_NAME));
+			it.attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.class, JBAKE_ASSETS_USAGE_NAME));
 		});
 	}
 }

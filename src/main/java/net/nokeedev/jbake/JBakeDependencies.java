@@ -54,19 +54,19 @@ public final class JBakeDependencies {
 			new AsDeclarable(new ConfigureJBakeExtensionDescription("JBake dependencies", it -> {})));
 
 		this.assets = configurations.register(names.configurationName(ASSETS_CONFIGURATION_NAME),
-			new AsResolvable(new ConfigureJBakeExtensionDescription("Assets", new JBakeAssetsConfiguration(project))));
+			new AsResolvable(new ConfigureJBakeExtensionDescription("Assets", new JBakeAssetsConfiguration(project.getObjects()))));
 		this.content = configurations.register(names.configurationName(CONTENT_CONFIGURATION_NAME),
-			new AsResolvable(new ConfigureJBakeExtensionDescription("Content", new JBakeContentConfiguration(project))));
+			new AsResolvable(new ConfigureJBakeExtensionDescription("Content", new JBakeContentConfiguration(project.getObjects()))));
 		this.templates = configurations.register(names.configurationName(TEMPLATES_CONFIGURATION_NAME),
-			new AsResolvable(new ConfigureJBakeExtensionDescription("Templates", new JBakeTemplatesConfiguration(project))));
+			new AsResolvable(new ConfigureJBakeExtensionDescription("Templates", new JBakeTemplatesConfiguration(project.getObjects()))));
 		this.properties = configurations.register(names.configurationName(CONFIGURATION_CONFIGURATION_NAME),
 			new AsResolvable(new ConfigureJBakeExtensionDescription("Configuration", new JBakePropertiesConfiguration(project))));
 		this.assetsElements = configurations.register(names.configurationName(ASSETS_ELEMENTS_CONFIGURATION_NAME),
-			new AsConsumable(new ConfigureJBakeExtensionDescription("Assets elements", new JBakeAssetsConfiguration(project))));
+			new AsConsumable(new ConfigureJBakeExtensionDescription("Assets elements", new JBakeAssetsConfiguration(project.getObjects()))));
 		this.contentElements = configurations.register(names.configurationName(CONTENT_ELEMENTS_CONFIGURATION_NAME),
-			new AsConsumable(new ConfigureJBakeExtensionDescription("Content elements", new JBakeContentConfiguration(project))));
+			new AsConsumable(new ConfigureJBakeExtensionDescription("Content elements", new JBakeContentConfiguration(project.getObjects()))));
 		this.templatesElements = configurations.register(names.configurationName(TEMPLATES_ELEMENTS_CONFIGURATION_NAME),
-			new AsConsumable(new ConfigureJBakeExtensionDescription("Templates elements", new JBakeTemplatesConfiguration(project))));
+			new AsConsumable(new ConfigureJBakeExtensionDescription("Templates elements", new JBakeTemplatesConfiguration(project.getObjects()))));
 		this.propertiesElements = configurations.register(names.configurationName(CONFIGURATION_ELEMENTS_CONFIGURATION_NAME),
 			new AsConsumable(new ConfigureJBakeExtensionDescription("Configuration elements", new JBakePropertiesConfiguration(project))));
 		this.bakedElements = configurations.register(names.configurationName(BAKED_ELEMENTS_CONFIGURATION_NAME),

@@ -16,26 +16,26 @@
 package net.nokeedev.jbake;
 
 import org.gradle.api.Action;
-import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.attributes.DocsType;
 import org.gradle.api.attributes.Usage;
+import org.gradle.api.model.ObjectFactory;
 
 import static org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE;
 
 final class JBakeContentConfiguration implements Action<Configuration> {
 	static final String JBAKE_CONTENT_USAGE_NAME = "jbake-content";
-	private final Project project;
+	private final ObjectFactory objects;
 
-	public JBakeContentConfiguration(Project project) {
-		this.project = project;
+	public JBakeContentConfiguration(ObjectFactory objects) {
+		this.objects = objects;
 	}
 
 	@Override
 	public void execute(Configuration configuration) {
 		configuration.attributes(it -> {
-			it.attribute(USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, JBAKE_CONTENT_USAGE_NAME));
-			it.attribute(DocsType.DOCS_TYPE_ATTRIBUTE, project.getObjects().named(DocsType.class, JBAKE_CONTENT_USAGE_NAME));
+			it.attribute(USAGE_ATTRIBUTE, objects.named(Usage.class, JBAKE_CONTENT_USAGE_NAME));
+			it.attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.class, JBAKE_CONTENT_USAGE_NAME));
 		});
 	}
 }
