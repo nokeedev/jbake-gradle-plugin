@@ -16,6 +16,22 @@ gradlePlugin {
 			id = 'net.nokeedev.jbake-site'
 			implementationClass = 'net.nokeedev.jbake.JBakePlugin'
 		}
+		jbakeAssets {
+			id = 'net.nokeedev.jbake-assets'
+			implementationClass = 'net.nokeedev.jbake.JBakeAssetsExtension$Rule'
+		}
+		jbakeContent {
+			id = 'net.nokeedev.jbake-content'
+			implementationClass = 'net.nokeedev.jbake.JBakeContentExtension$Rule'
+		}
+		jbakeTemplates {
+			id = 'net.nokeedev.jbake-templates'
+			implementationClass = 'net.nokeedev.jbake.JBakeTemplatesExtension$Rule'
+		}
+		jbakeProperties {
+			id = 'net.nokeedev.jbake-properties'
+			implementationClass = 'net.nokeedev.jbake.JBakePropertiesExtension$Rule'
+		}
 	}
 
 	dependencies {

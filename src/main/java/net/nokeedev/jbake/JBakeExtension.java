@@ -32,7 +32,7 @@ import javax.inject.Inject;
 import java.io.File;
 import java.util.Optional;
 
-public abstract class JBakeExtension {
+public abstract class JBakeExtension implements ExtensionAware {
 	public static final String JBAKE_EXTENSION_NAME = "jbake";
 	private final TaskProvider<Sync> stageTask;
 	private final TaskProvider<JBakeTask> bakeTask;
@@ -50,7 +50,6 @@ public abstract class JBakeExtension {
 
 		dependencies(new ExtendsFromJBakeConfiguration());
 		dependencies(new AttachJBakeArtifacts(project, this, names));
-		dependencies(new ResolveAsDirectoryArtifact());
 		Optional.of(project.getGroup().toString())
 			.filter(it -> !it.isEmpty())
 			.flatMap(group -> names.capability().map(capability -> group + ":" + capability + ":" + project.getVersion()))
@@ -61,28 +60,38 @@ public abstract class JBakeExtension {
 	}
 
 	public abstract ConfigurableFileCollection getClasspath();
-	public abstract ConfigurableFileCollection getContent();
-	public Provider<File> sync(String name, Action<? super CopySpec> action) {
-		final String syncTaskName = names.taskName("sync", name);
-		for (NamedDomainObjectCollectionSchema.NamedDomainObjectSchema element : project.getTasks().getCollectionSchema().getElements()) {
-			if (element.getName().equals(syncTaskName)) {
-				return project.getTasks().named(syncTaskName, Sync.class, action).map(Sync::getDestinationDir);
-			}
-		}
 
-		final TaskProvider<Sync> syncTask = project.getTasks().register(syncTaskName, Sync.class, task -> {
-			task.setIncludeEmptyDirs(false);
-			task.setDestinationDir(project.getLayout().getBuildDirectory().dir("tmp/" + task.getName()).get().getAsFile());
-		});
-		syncTask.configure(action);
-		return syncTask.map(Sync::getDestinationDir);
+	public JBakeContentExtension getContent() {
+		return getExtensions().getByType(JBakeContentExtension.class);
 	}
 
-	public abstract ConfigurableFileCollection getAssets();
-	public abstract ConfigurableFileCollection getTemplates();
+	public void content(Action<? super CopySpec> action) {
+		getContent().configure(action);
+	}
 
-	@SuppressWarnings("UnstableApiUsage")
-	public abstract MapProperty<String, Object> getConfigurations();
+	public JBakeAssetsExtension getAssets() {
+		return getExtensions().getByType(JBakeAssetsExtension.class);
+	}
+
+	public void assets(Action<? super CopySpec> action) {
+		getAssets().configure(action);
+	}
+
+	public JBakeTemplatesExtension getTemplates() {
+		return getExtensions().getByType(JBakeTemplatesExtension.class);
+	}
+
+	public void templates(Action<? super CopySpec> action) {
+		getTemplates().configure(action);
+	}
+
+	public JBakePropertiesExtension getConfigurations() {
+		return getExtensions().getByType(JBakePropertiesExtension.class);
+	}
+
+	public void configurations(Action<? super MapProperty<String, Object>> action) {
+		getConfigurations().configure(action);
+	}
 
 	public abstract DirectoryProperty getDestinationDirectory();
 

@@ -22,11 +22,6 @@ final class ExtendsFromJBakeConfiguration implements Action<JBakeDependencies> {
 	@Override
 	public void execute(JBakeDependencies dependencies) {
 		final Action<Configuration> extendsFromJBake = configuration -> configuration.extendsFrom(dependencies.getJBake().get());
-		dependencies.getAssets().configure(extendsFromJBake);
-		dependencies.getContent().configure(extendsFromJBake);
-		dependencies.getTemplates().configure(extendsFromJBake);
-		dependencies.getProperties().configure(extendsFromJBake);
-
 		dependencies.getAssetsElements().configure(extendsFromJBake);
 		dependencies.getContentElements().configure(extendsFromJBake);
 		dependencies.getTemplatesElements().configure(extendsFromJBake);

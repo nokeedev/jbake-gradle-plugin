@@ -32,10 +32,10 @@ final class JBakeDefaultLayout implements Action<JBakeExtension> {
 	@Override
 	@SuppressWarnings("UnstableApiUsage")
 	public void execute(JBakeExtension extension) {
-		extension.getAssets().from("src/jbake/assets");
-		extension.getContent().from("src/jbake/content");
-		extension.getTemplates().from("src/jbake/templates");
-		extension.getConfigurations().putAll(defaultJBakeProperties());
+		extension.getAssets().configure(it -> it.from("src/jbake/assets"));
+		extension.getContent().configure(it -> it.from("src/jbake/content"));
+		extension.getTemplates().configure(it -> it.from("src/jbake/templates"));
+		extension.getConfigurations().configure(it -> it.putAll(defaultJBakeProperties()));
 	}
 
 	private Provider<Map<String, Object>> defaultJBakeProperties() {

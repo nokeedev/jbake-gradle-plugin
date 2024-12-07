@@ -17,12 +17,6 @@ package net.nokeedev.jbake;
 
 import org.gradle.api.Action;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.file.RegularFile;
-import org.gradle.api.provider.Provider;
-import org.gradle.api.tasks.TaskProvider;
-
-import java.io.File;
 
 final class AttachJBakeArtifacts implements Action<JBakeDependencies> {
 	private final Project project;
@@ -37,27 +31,6 @@ final class AttachJBakeArtifacts implements Action<JBakeDependencies> {
 
 	@Override
 	public void execute(JBakeDependencies dependencies) {
-		dependencies.getAssetsElements().configure(new FileCollectionArtifact(project, extension.getAssets()));
-		dependencies.getContentElements().configure(new FileCollectionArtifact(project, extension.getContent()));
-		dependencies.getTemplatesElements().configure(new FileCollectionArtifact(project, extension.getTemplates()));
 		dependencies.getBakedElements().configure(new DirectoryArtifact(project, extension.getDestinationDirectory()));
-		dependencies.getPropertiesElements().configure(artifactIfExists(jbakeProperties().map(RegularFile::getAsFile)));
-	}
-
-	private Provider<RegularFile> jbakeProperties() {
-		final TaskProvider<GenerateJBakeProperties> bakePropertiesTask = project.getTasks().register(names.taskName("bakeProperties"), GenerateJBakeProperties.class, task -> {
-			task.getConfigurations().value(extension.getConfigurations()).disallowChanges();
-			task.getOutputFile().value(project.getLayout().getBuildDirectory().file("tmp/" + task.getName() + "/jbake.properties"));
-		});
-		// Because publish artifacts gets queried early, we can't flat map the output property.
-		//   Instead, we map the task to the property value... it's a workaround to achieve the same thing:
-		//   aka. a provider to the output file with implicit task dependency
-		return bakePropertiesTask.map(it -> it.getOutputFile().get());
-	}
-
-	private Action<Configuration> artifactIfExists(Provider<File> fileProvider) {
-		return configuration -> {
-			configuration.getOutgoing().artifact(fileProvider);
-		};
 	}
 }

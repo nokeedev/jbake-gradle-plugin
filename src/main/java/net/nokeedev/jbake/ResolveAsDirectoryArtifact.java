@@ -21,16 +21,11 @@ import org.gradle.api.attributes.Attribute;
 
 import static org.gradle.api.artifacts.type.ArtifactTypeDefinition.DIRECTORY_TYPE;
 
-final class ResolveAsDirectoryArtifact implements Action<JBakeDependencies> {
+final class ResolveAsDirectoryArtifact implements Action<Configuration> {
 	private static final Attribute<String> ARTIFACT_TYPE_ATTRIBUTE = Attribute.of("artifactType", String.class);
 
 	@Override
-	public void execute(JBakeDependencies dependencies) {
-		final Action<Configuration> resolveAsDirectoryArtifact = configuration -> {
-			configuration.attributes(it -> it.attribute(ARTIFACT_TYPE_ATTRIBUTE, DIRECTORY_TYPE));
-		};
-		dependencies.getAssets().configure(resolveAsDirectoryArtifact);
-		dependencies.getContent().configure(resolveAsDirectoryArtifact);
-		dependencies.getTemplates().configure(resolveAsDirectoryArtifact);
+	public void execute(Configuration configuration) {
+		configuration.attributes(it -> it.attribute(ARTIFACT_TYPE_ATTRIBUTE, DIRECTORY_TYPE));
 	}
 }

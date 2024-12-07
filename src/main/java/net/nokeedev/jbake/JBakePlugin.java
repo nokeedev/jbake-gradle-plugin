@@ -25,8 +25,10 @@ class JBakePlugin implements Plugin<Project> {
 	@Override
 	public void apply(Project project) {
 		project.getPlugins().apply(JBakeBasePlugin.class);
-		new RegisterJBakeArtifactTransforms(project).execute(project.getDependencies());
-		project.getPlugins().withType(PublishingPlugin.class, ignored -> jbake(project, new RegisterJBakeComponent(project)));
+		project.getPluginManager().apply("net.nokeedev.jbake-assets");
+		project.getPluginManager().apply("net.nokeedev.jbake-templates");
+		project.getPluginManager().apply("net.nokeedev.jbake-content");
+		project.getPluginManager().apply("net.nokeedev.jbake-properties");
 		jbake(project, new JBakeDefaultLayout(project));
 		project.getTasks().register("bakePreview", JBakeServeTask.class, task -> {
 			task.getServeDirectory().convention(jbake(project).getBakeTask().flatMap(JBakeTask::getDestinationDirectory));
