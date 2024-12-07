@@ -21,6 +21,6 @@ import org.gradle.api.specs.Spec;
 final class HasUnpublishableArtifactType implements Spec<ConfigurationVariant> {
 	@Override
 	public boolean isSatisfiedBy(ConfigurationVariant element) {
-		return element.getArtifacts().stream().anyMatch(it -> it.getType().equals("directory"));
+		return element.getArtifacts().stream().anyMatch(it -> it.getType().endsWith("-directory") || it.getType().endsWith("-properties"));
 	}
 }

@@ -18,11 +18,17 @@ package net.nokeedev.jbake;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
-import org.gradle.api.artifacts.transform.TransformParameters;
-import org.gradle.api.artifacts.transform.TransformSpec;
+import org.gradle.api.artifacts.transform.*;
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.attributes.Usage;
+import org.gradle.api.file.FileSystemLocation;
 import org.gradle.api.internal.artifacts.transform.UnzipTransform;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.Provider;
+
+import javax.inject.Inject;
+import java.io.File;
 
 import static net.nokeedev.jbake.JBakeAssetsConfiguration.JBAKE_ASSETS_USAGE_NAME;
 import static net.nokeedev.jbake.JBakeBakedConfiguration.JBAKE_BAKED_USAGE_NAME;
@@ -33,30 +39,138 @@ import static org.gradle.api.artifacts.type.ArtifactTypeDefinition.ZIP_TYPE;
 
 final class RegisterJBakeArtifactTransforms implements Action<DependencyHandler> {
 	private final Project project;
+	private final ObjectFactory objects;
 
 	RegisterJBakeArtifactTransforms(Project project) {
 		this.project = project;
+		this.objects = project.getObjects();
 	}
 
 	@Override
 	public void execute(DependencyHandler dependencies) {
 		dependencies.registerTransform(UnzipTransform.class,
-			unzipArtifact(project.getObjects().named(Usage.class, JBAKE_CONTENT_USAGE_NAME)));
-		dependencies.registerTransform(UnzipTransform.class,
-			unzipArtifact(project.getObjects().named(Usage.class, JBAKE_ASSETS_USAGE_NAME)));
-		dependencies.registerTransform(UnzipTransform.class,
-			unzipArtifact(project.getObjects().named(Usage.class, JBAKE_TEMPLATES_USAGE_NAME)));
-		dependencies.registerTransform(UnzipTransform.class,
-			unzipArtifact(project.getObjects().named(Usage.class, JBAKE_BAKED_USAGE_NAME)));
+			unzipArtifact(project.getObjects().named(Usage.class, "jbake")));
+
+		dependencies.registerTransform(UnpackJBakeContentTransform.class, spec -> {
+			spec.getFrom()
+				.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"))
+				.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-directory")
+				;
+			spec.getTo()
+				.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"))
+				.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-content-directory")
+				;
+		});
+
+		dependencies.registerTransform(UnpackJBakeAssetsTransform.class, spec -> {
+			spec.getFrom()
+				.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"))
+				.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-directory")
+			;
+			spec.getTo()
+				.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"))
+				.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-assets-directory")
+			;
+		});
+
+		dependencies.registerTransform(UnpackJBakeTemplatesTransform.class, spec -> {
+			spec.getFrom()
+				.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"))
+				.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-directory")
+			;
+			spec.getTo()
+				.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"))
+				.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-templates-directory")
+			;
+		});
+
+		dependencies.registerTransform(UnpackJBakePropertiesTransform.class, spec -> {
+			spec.getFrom()
+				.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"))
+				.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-directory")
+			;
+			spec.getTo()
+				.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"))
+				.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-properties")
+			;
+		});
 	}
 
 	private static final Attribute<String> ARTIFACT_FORMAT = Attribute.of("artifactType", String.class);
 	private static Action<TransformSpec<TransformParameters.None>> unzipArtifact(Usage targetUsage) {
 		return variantTransform -> {
-			variantTransform.getFrom().attribute(ARTIFACT_FORMAT, ZIP_TYPE);
+			variantTransform.getFrom().attribute(ARTIFACT_FORMAT, "jbake-archive");
 			variantTransform.getFrom().attribute(Usage.USAGE_ATTRIBUTE, targetUsage);
-			variantTransform.getTo().attribute(ARTIFACT_FORMAT, targetUsage.getName() + "-directory");
+			variantTransform.getTo().attribute(ARTIFACT_FORMAT, "jbake-directory");
 			variantTransform.getTo().attribute(Usage.USAGE_ATTRIBUTE, targetUsage);
 		};
+	}
+
+	/*private*/ static abstract /*final*/ class UnpackJBakeContentTransform implements TransformAction<TransformParameters.None> {
+		@Inject
+		public UnpackJBakeContentTransform() {}
+
+		@InputArtifact
+		public abstract Provider<FileSystemLocation> getInputArtifact();
+
+		@Override
+		public void transform(TransformOutputs outputs) {
+			File artifact = getInputArtifact().get().getAsFile();
+			File contentDir = new File(artifact, "content");
+			if (contentDir.exists()) {
+				outputs.dir(contentDir);
+			}
+		}
+	}
+
+	/*private*/ static abstract /*final*/ class UnpackJBakeAssetsTransform implements TransformAction<TransformParameters.None> {
+		@Inject
+		public UnpackJBakeAssetsTransform() {}
+
+		@InputArtifact
+		public abstract Provider<FileSystemLocation> getInputArtifact();
+
+		@Override
+		public void transform(TransformOutputs outputs) {
+			File artifact = getInputArtifact().get().getAsFile();
+			File contentDir = new File(artifact, "assets");
+			if (contentDir.exists()) {
+				outputs.dir(contentDir);
+			}
+		}
+	}
+
+	/*private*/ static abstract /*final*/ class UnpackJBakeTemplatesTransform implements TransformAction<TransformParameters.None> {
+		@Inject
+		public UnpackJBakeTemplatesTransform() {}
+
+		@InputArtifact
+		public abstract Provider<FileSystemLocation> getInputArtifact();
+
+		@Override
+		public void transform(TransformOutputs outputs) {
+			File artifact = getInputArtifact().get().getAsFile();
+			File contentDir = new File(artifact, "templates");
+			if (contentDir.exists()) {
+				outputs.dir(contentDir);
+			}
+		}
+	}
+
+	/*private*/ static abstract /*final*/ class UnpackJBakePropertiesTransform implements TransformAction<TransformParameters.None> {
+		@Inject
+		public UnpackJBakePropertiesTransform() {}
+
+		@InputArtifact
+		public abstract Provider<FileSystemLocation> getInputArtifact();
+
+		@Override
+		public void transform(TransformOutputs outputs) {
+			File artifact = getInputArtifact().get().getAsFile();
+			File file = new File(artifact, "jbake.properties");
+			if (file.exists()) {
+				outputs.file(file);
+			}
+		}
 	}
 }

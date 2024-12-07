@@ -6,6 +6,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.model.ObjectFactory;
@@ -19,12 +20,13 @@ import java.io.File;
 import java.util.Map;
 
 public class JBakePropertiesExtension implements JBakeProperties {
+	private final TaskProvider<GenerateJBakeProperties> assembleTask;
 	private final NamedDomainObjectProvider<Configuration> properties;
 	private final MapProperty<String, Object> elements;
 	private final MapProperty<String, Object> allElements;
 
 	@Inject
-	public JBakePropertiesExtension(Names names, ObjectFactory objects, ConfigurationContainer configurations) {
+	public JBakePropertiesExtension(Names names, ObjectFactory objects, ConfigurationContainer configurations, TaskContainer tasks) {
 		this.properties = configurations.register(names.configurationName("configuration"));
 
 		properties.configure(new AsDeclarable(it -> {}));
@@ -40,9 +42,18 @@ public class JBakePropertiesExtension implements JBakeProperties {
 		incomingAssets.configure(new ConfigureJBakeExtensionDescription("Configuration", it -> {}));
 //		incomingAssets.configure(new ResolveAsDirectoryArtifact());
 
-		allElements.putAll(incomingAssets.flatMap(it -> it.getIncoming().getFiles().getElements()).map(new TransformEachTransformer<>(new LoadPropertiesFileIfAvailable())).map(new MergeJBakePropertiesTransformer()));
+		allElements.putAll(incomingAssets.flatMap(it -> it.getIncoming().artifactView(view -> {
+			view.attributes(attributes -> {
+				attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-properties");
+			});
+		}).getFiles().getElements()).map(new TransformEachTransformer<>(new LoadPropertiesFileIfAvailable())).map(new MergeJBakePropertiesTransformer()));
 		allElements.putAll(elements);
 
+		this.assembleTask = tasks.register(names.taskName("assemble", "JBakeProperties"), GenerateJBakeProperties.class);
+		this.assembleTask.configure(task -> {
+			task.getConfigurations().putAll(allElements);
+			task.getOutputFile().fileValue(new File(task.getTemporaryDir(), "jbake.properties"));
+		});
 //		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) incomingAssets::get);
 
 //		getLocation().fileProvider(assembleTask.map(Sync::getDestinationDir));
@@ -83,9 +94,17 @@ public class JBakePropertiesExtension implements JBakeProperties {
 			project.getExtensions().configure(JBakeExtension.class, jbake -> {
 				JBakePropertiesExtension properties = jbake.getExtensions().create("configurations", JBakePropertiesExtension.class, Names.forMain());
 				properties.properties.configure(it -> it.extendsFrom(jbake.getDependencies().getJBake().get()));
-//				jbake.getStageTask().configure(task -> task.into("assets", spec -> spec.from(properties.getAsFileTree())));
-				jbake.getDependencies().getPropertiesElements().configure(it -> it.extendsFrom(properties.asConfiguration()));
-				jbake.getDependencies().getPropertiesElements().configure(artifactIfExists(jbakeProperties(Names.forMain(), properties).map(RegularFile::getAsFile)));
+				jbake.getStageTask().configure(task -> task.from(properties.assembleTask));
+				jbake.getBakeTask().configure(task -> {
+					task.getConfigurations().putAll(properties.getAllElements());
+				});
+				jbake.getDependencies().getJBakeElements().configure(it -> {
+					it.outgoing(outgoing -> {
+						outgoing.getVariants().create("jbake-properties", variant -> {
+							variant.artifact(properties.assembleTask, t -> t.setType("jbake-properties"));
+						});
+					});
+				});
 			});
 		}
 

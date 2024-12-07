@@ -35,16 +35,7 @@ final class RegisterJBakeComponent implements Action<JBakeExtension> {
 		final Action<ConfigurationVariantDetails> skipIfOnAnyUnpublishableArtifactType = new SkipIf(new HasUnpublishableArtifactType());
 
 		component.addVariantsFromConfiguration(
-			extension.getDependencies().getAssetsElements().get(),
-			skipIfOnAnyUnpublishableArtifactType);
-		component.addVariantsFromConfiguration(
-			extension.getDependencies().getTemplatesElements().get(),
-			skipIfOnAnyUnpublishableArtifactType);
-		component.addVariantsFromConfiguration(
-			extension.getDependencies().getContentElements().get(),
-			skipIfOnAnyUnpublishableArtifactType);
-		component.addVariantsFromConfiguration(
-			extension.getDependencies().getPropertiesElements().get(),
+			extension.getDependencies().getJBakeElements().get(),
 			skipIfOnAnyUnpublishableArtifactType);
 //		component.addVariantsFromConfiguration(
 //			extension.getDependencies().getBakedElements().get(),

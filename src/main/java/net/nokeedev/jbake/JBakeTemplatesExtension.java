@@ -6,7 +6,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
-import org.gradle.api.artifacts.dsl.DependencyHandler;
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.CopySpec;
 import org.gradle.api.file.DirectoryProperty;
@@ -43,7 +43,13 @@ public abstract class JBakeTemplatesExtension implements JBakeTemplates {
 		incomingTemplates.configure(new ConfigureJBakeExtensionDescription("Templates", it -> {}));
 		incomingTemplates.configure(new ResolveAsDirectoryArtifact("jbake-templates-directory"));
 
-		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) incomingTemplates::get);
+		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) () -> {
+			return incomingTemplates.get().getIncoming().artifactView(it -> {
+				it.attributes(attributes -> {
+					attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-templates-directory");
+				});
+			}).getFiles();
+		});
 
 		getLocation().fileProvider(assembleTask.map(Sync::getDestinationDir));
 		getLocation().disallowChanges();
@@ -76,8 +82,13 @@ public abstract class JBakeTemplatesExtension implements JBakeTemplates {
 				JBakeTemplatesExtension templates = jbake.getExtensions().create("templates", JBakeTemplatesExtension.class, Names.forMain());
 				templates.templates.configure(it -> it.extendsFrom(jbake.getDependencies().getJBake().get()));
 				jbake.getStageTask().configure(task -> task.into("templates", spec -> spec.from(templates.getAsFileTree())));
-				jbake.getDependencies().getTemplatesElements().configure(it -> it.extendsFrom(templates.asConfiguration()));
-				jbake.getDependencies().getTemplatesElements().configure(new FileCollectionArtifact(project, templates.getLocation().getAsFileTree(), "jbake-templates"));
+				jbake.getDependencies().getJBakeElements().configure(it -> {
+					it.outgoing(outgoing -> {
+						outgoing.getVariants().create("jbake-templates-directory", variant -> {
+							variant.artifact(templates.getLocation(), t -> t.setType("jbake-templates-directory"));
+						});
+					});
+				});
 			});
 		}
 	}

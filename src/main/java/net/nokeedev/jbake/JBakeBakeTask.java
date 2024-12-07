@@ -42,7 +42,7 @@ final class JBakeBakeTask implements Action<JBakeTask> {
 			task.setDescription("Bakes with JBake");
 			task.getSourceDirectory().fileProvider(extension.getStageTask().map(Sync::getDestinationDir));
 			task.getDestinationDirectory().value(project.getLayout().getBuildDirectory().dir("jbake"));
-			task.getConfigurations().putAll(extension.getConfigurations().getAllElements());
+//			task.getConfigurations().putAll(extension.getConfigurations().getAllElements());
 			task.getConfigurations().put("working.directory", extension.getStageTask().map(this::relativeToProjectDirectory));
 			task.getClasspath()
 				.from(jbake("2.6.7"))

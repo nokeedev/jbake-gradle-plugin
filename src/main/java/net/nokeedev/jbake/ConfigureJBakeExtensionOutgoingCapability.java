@@ -27,10 +27,7 @@ final class ConfigureJBakeExtensionOutgoingCapability implements Action<JBakeDep
 
 	@Override
 	public void execute(JBakeDependencies dependencies) {
-		dependencies.getAssetsElements().configure(this::configureOutgoingCapability);
-		dependencies.getContentElements().configure(this::configureOutgoingCapability);
-		dependencies.getTemplatesElements().configure(this::configureOutgoingCapability);
-		dependencies.getPropertiesElements().configure(this::configureOutgoingCapability);
+		dependencies.getJBakeElements().configure(this::configureOutgoingCapability);
 		dependencies.getBakedElements().configure(this::configureOutgoingCapability);
 	}
 

@@ -6,6 +6,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.CopySpec;
 import org.gradle.api.file.DirectoryProperty;
@@ -50,7 +51,13 @@ public abstract /*final*/ class JBakeAssetsExtension implements JBakeAssets {
 		incomingAssets.configure(new ConfigureJBakeExtensionDescription("Assets", it -> {}));
 		incomingAssets.configure(new ResolveAsDirectoryArtifact("jbake-assets-directory"));
 
-		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) incomingAssets::get);
+		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) () -> {
+			return incomingAssets.get().getIncoming().artifactView(it -> {
+				it.attributes(attributes -> {
+					attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-assets-directory");
+				});
+			}).getFiles();
+		});
 
 		getLocation().fileProvider(assembleTask.map(Sync::getDestinationDir));
 		getLocation().disallowChanges();
@@ -83,8 +90,13 @@ public abstract /*final*/ class JBakeAssetsExtension implements JBakeAssets {
 				JBakeAssetsExtension assets = jbake.getExtensions().create("assets", JBakeAssetsExtension.class, Names.forMain());
 				assets.assets.configure(it -> it.extendsFrom(jbake.getDependencies().getJBake().get()));
 				jbake.getStageTask().configure(task -> task.into("assets", spec -> spec.from(assets.getAsFileTree())));
-				jbake.getDependencies().getAssetsElements().configure(it -> it.extendsFrom(assets.asConfiguration()));
-				jbake.getDependencies().getAssetsElements().configure(new FileCollectionArtifact(project, assets.getLocation().getAsFileTree(), "jbake-assets"));
+				jbake.getDependencies().getJBakeElements().configure(it -> {
+					it.outgoing(outgoing -> {
+						outgoing.getVariants().create("jbake-assets-directory", variant -> {
+							variant.artifact(assets.getLocation(), t -> t.setType("jbake-assets-directory"));
+						});
+					});
+				});
 			});
 		}
 	}

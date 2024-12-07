@@ -27,6 +27,7 @@ import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.bundling.Zip;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -48,7 +49,6 @@ public abstract class JBakeExtension implements ExtensionAware {
 		this.bakeTask = tasks.register(names.taskName("bake"), JBakeTask.class);
 		this.dependencies = new JBakeDependencies(project, names);
 
-		dependencies(new ExtendsFromJBakeConfiguration());
 		dependencies(new AttachJBakeArtifacts(project, this, names));
 		Optional.of(project.getGroup().toString())
 			.filter(it -> !it.isEmpty())
@@ -57,6 +57,25 @@ public abstract class JBakeExtension implements ExtensionAware {
 		getStageTask().configure(new JBakeStageTask(project, this));
 		getBakeTask().configure(new JBakeBakeTask(project, this));
 		getDestinationDirectory().value(getBakeTask().flatMap(JBakeTask::getDestinationDirectory)).disallowChanges();
+
+		dependencies.getJBakeElements().configure(it -> {
+			it.outgoing(outgoing -> {
+				outgoing.getVariants().create("jbake-directory", variant -> {
+					variant.artifact(getStageTask().map(Sync::getDestinationDir), t -> t.setType("jbake-directory"));
+				});
+			});
+		});
+
+		TaskProvider<Zip> zipTask = tasks.register(names.taskName("zip", "JBake"), Zip.class);
+		zipTask.configure(task -> {
+			task.from(getStageTask());
+			task.getDestinationDirectory().fileValue(task.getTemporaryDir());
+		});
+		dependencies.getJBakeElements().configure(it -> {
+			it.outgoing(outgoing -> {
+				outgoing.artifact(zipTask, t -> t.setType("jbake-archive"));
+			});
+		});
 	}
 
 	public abstract ConfigurableFileCollection getClasspath();

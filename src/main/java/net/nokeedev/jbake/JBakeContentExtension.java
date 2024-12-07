@@ -6,6 +6,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.CopySpec;
 import org.gradle.api.file.DirectoryProperty;
@@ -42,7 +43,13 @@ public abstract /*final*/ class JBakeContentExtension implements JBakeContent {
 		incomingContent.configure(new ConfigureJBakeExtensionDescription("Content", it -> {}));
 		incomingContent.configure(new ResolveAsDirectoryArtifact("jbake-content-directory"));
 
-		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) incomingContent::get);
+		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) () -> {
+			return incomingContent.get().getIncoming().artifactView(it -> {
+				it.attributes(attributes -> {
+					attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-content-directory");
+				});
+			}).getFiles();
+		});
 
 		getLocation().fileProvider(assembleTask.map(Sync::getDestinationDir));
 		getLocation().disallowChanges();
@@ -75,8 +82,13 @@ public abstract /*final*/ class JBakeContentExtension implements JBakeContent {
 				JBakeContentExtension content = jbake.getExtensions().create("content", JBakeContentExtension.class, Names.forMain());
 				content.content.configure(it -> it.extendsFrom(jbake.getDependencies().getJBake().get()));
 				jbake.getStageTask().configure(task -> task.into("content", spec -> spec.from(content.getAsFileTree())));
-				jbake.getDependencies().getContentElements().configure(it -> it.extendsFrom(content.asConfiguration()));
-				jbake.getDependencies().getContentElements().configure(new FileCollectionArtifact(project, content.getLocation().getAsFileTree(), "jbake-content"));
+				jbake.getDependencies().getJBakeElements().configure(it -> {
+					it.outgoing(outgoing -> {
+						outgoing.getVariants().create("jbake-content-directory", variant -> {
+							variant.artifact(content.getLocation(), t -> t.setType("jbake-content-directory"));
+						});
+					});
+				});
 			});
 		}
 	}

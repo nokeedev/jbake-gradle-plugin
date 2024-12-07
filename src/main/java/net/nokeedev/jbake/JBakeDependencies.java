@@ -19,6 +19,7 @@ import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.attributes.Usage;
 
 public final class JBakeDependencies {
 	public static final String JBAKE_CONFIGURATION_NAME = "jbake";
@@ -34,12 +35,8 @@ public final class JBakeDependencies {
 	public static final String CONFIGURATION_ELEMENTS_CONFIGURATION_NAME = "configurationElements";
 	public static final String BAKED_ELEMENTS_CONFIGURATION_NAME = "bakedElements";
 
-	private final NamedDomainObjectProvider<Configuration> assetsElements;
-	private final NamedDomainObjectProvider<Configuration> contentElements;
-	private final NamedDomainObjectProvider<Configuration> templatesElements;
-	private final NamedDomainObjectProvider<Configuration> propertiesElements;
-
 	private final NamedDomainObjectProvider<Configuration> bakedElements;
+	private final NamedDomainObjectProvider<Configuration> jbakeElements;
 
 	private final NamedDomainObjectProvider<Configuration> jbake;
 
@@ -48,36 +45,24 @@ public final class JBakeDependencies {
 		this.jbake = configurations.register(names.configurationName(JBAKE_CONFIGURATION_NAME),
 			new AsDeclarable(new ConfigureJBakeExtensionDescription("JBake dependencies", it -> {})));
 
-		this.assetsElements = configurations.register(names.configurationName(ASSETS_ELEMENTS_CONFIGURATION_NAME),
-			new AsConsumable(new ConfigureJBakeExtensionDescription("Assets elements", new JBakeAssetsConfiguration(project.getObjects()))));
-		this.contentElements = configurations.register(names.configurationName(CONTENT_ELEMENTS_CONFIGURATION_NAME),
-			new AsConsumable(new ConfigureJBakeExtensionDescription("Content elements", new JBakeContentConfiguration(project.getObjects()))));
-		this.templatesElements = configurations.register(names.configurationName(TEMPLATES_ELEMENTS_CONFIGURATION_NAME),
-			new AsConsumable(new ConfigureJBakeExtensionDescription("Templates elements", new JBakeTemplatesConfiguration(project.getObjects()))));
-		this.propertiesElements = configurations.register(names.configurationName(CONFIGURATION_ELEMENTS_CONFIGURATION_NAME),
-			new AsConsumable(new ConfigureJBakeExtensionDescription("Configuration elements", new JBakePropertiesConfiguration(project.getObjects()))));
+		this.jbakeElements = configurations.register(names.configurationName("jbakeElements"),
+			new AsConsumable(new ConfigureJBakeExtensionDescription("JBake elements", it -> {})));
+		this.jbakeElements.configure(config -> {
+			config.extendsFrom(jbake.get());
+			config.attributes(attributes -> {
+				attributes.attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, "jbake"));
+			});
+		});
 		this.bakedElements = configurations.register(names.configurationName(BAKED_ELEMENTS_CONFIGURATION_NAME),
 			new AsConsumable(new ExcludeFromAssembleTask(new ConfigureJBakeExtensionDescription("Baked elements", new JBakeBakedConfiguration(project)))));
 	}
 
-	public NamedDomainObjectProvider<Configuration> getAssetsElements() {
-		return assetsElements;
-	}
-
-	public NamedDomainObjectProvider<Configuration> getContentElements() {
-		return contentElements;
-	}
-
-	public NamedDomainObjectProvider<Configuration> getTemplatesElements() {
-		return templatesElements;
-	}
-
-	public NamedDomainObjectProvider<Configuration> getPropertiesElements() {
-		return propertiesElements;
-	}
-
 	public NamedDomainObjectProvider<Configuration> getBakedElements() {
 		return bakedElements;
+	}
+
+	public NamedDomainObjectProvider<Configuration> getJBakeElements() {
+		return jbakeElements;
 	}
 
 	public NamedDomainObjectProvider<Configuration> getJBake() {
