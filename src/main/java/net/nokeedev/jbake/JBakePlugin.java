@@ -17,7 +17,6 @@ package net.nokeedev.jbake;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.publish.plugins.PublishingPlugin;
 
 import static net.nokeedev.jbake.JBakeExtension.jbake;
 
