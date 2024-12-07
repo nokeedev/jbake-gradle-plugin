@@ -23,6 +23,7 @@ import org.gradle.api.file.CopySpec;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.provider.MapProperty;
+import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.TaskContainer;
@@ -31,6 +32,7 @@ import org.gradle.api.tasks.bundling.Zip;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.util.Collections;
 import java.util.Optional;
 
 public abstract class JBakeExtension implements ExtensionAware {
@@ -40,6 +42,7 @@ public abstract class JBakeExtension implements ExtensionAware {
 	private final JBakeDependencies dependencies;
 	private final Project project;
 	private final Names names;
+	private final Property<String> jbakeVersionToUse;
 
 	@Inject
 	public JBakeExtension(Project project, TaskContainer tasks, Names names) {
@@ -48,6 +51,8 @@ public abstract class JBakeExtension implements ExtensionAware {
 		this.stageTask = tasks.register(names.taskName("stageBake"), Sync.class);
 		this.bakeTask = tasks.register(names.taskName("bake"), JBakeTask.class);
 		this.dependencies = new JBakeDependencies(project, names);
+		this.jbakeVersionToUse = project.getObjects().property(String.class);
+		this.jbakeVersionToUse.convention("2.6.7");
 
 		dependencies(new AttachJBakeArtifacts(project, this, names));
 		Optional.of(project.getGroup().toString())
@@ -56,6 +61,7 @@ public abstract class JBakeExtension implements ExtensionAware {
 			.ifPresent(capability -> dependencies(new ConfigureJBakeExtensionOutgoingCapability(capability)));
 		getStageTask().configure(new JBakeStageTask(project, this));
 		getBakeTask().configure(new JBakeBakeTask(project, this));
+		getBakeTask().configure(task -> task.getClasspath().from(jbakeVersionToUse.map(version -> (Object) project.getConfigurations().detachedConfiguration(project.getDependencies().create("org.jbake:jbake-core:" + version))).orElse(Collections.emptySet())));
 		getDestinationDirectory().value(getBakeTask().flatMap(JBakeTask::getDestinationDirectory)).disallowChanges();
 
 		dependencies.getJBakeElements().configure(it -> {
@@ -78,7 +84,9 @@ public abstract class JBakeExtension implements ExtensionAware {
 		});
 	}
 
-	public abstract ConfigurableFileCollection getClasspath();
+	public void useRuntime(String version) {
+		jbakeVersionToUse.set(version);
+	}
 
 	public JBakeContentExtension getContent() {
 		return getExtensions().getByType(JBakeContentExtension.class);

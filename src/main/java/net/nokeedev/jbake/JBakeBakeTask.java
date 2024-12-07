@@ -45,7 +45,6 @@ final class JBakeBakeTask implements Action<JBakeTask> {
 //			task.getConfigurations().putAll(extension.getConfigurations().getAllElements());
 			task.getConfigurations().put("working.directory", extension.getStageTask().map(this::relativeToProjectDirectory));
 			task.getClasspath()
-				.from(jbake("2.6.7"))
 				.from(asciidoctor("2.4.3"))
 				.from(groovyTemplates("3.0.7"))
 				.from(flexmarkTemplates("0.62.2"))
@@ -59,10 +58,6 @@ final class JBakeBakeTask implements Action<JBakeTask> {
 
 	private String relativeToProjectDirectory(Sync task) {
 		return project.getLayout().getProjectDirectory().getAsFile().toPath().relativize(task.getDestinationDir().toPath()).toString();
-	}
-
-	private FileCollection jbake(String version) {
-		return configurations.detachedConfiguration(dependencies.create("org.jbake:jbake-core:" + version));
 	}
 
 	// TODO: Move to asciidoctor-language plugin
