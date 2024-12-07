@@ -35,12 +35,13 @@ gradlePlugin {
 	}
 
 	dependencies {
+		compileOnly 'dev.gradleplugins:gradle-api:7.6.4'
 		compileOnly 'org.jbake:jbake-core:2.6.7'
 		compileOnly 'commons-configuration:commons-configuration:1.10'
 	}
 
 	compatibility {
-		minimumGradleVersion = '6.2.1'
+		minimumGradleVersion = '7.3'
 	}
 }
 
