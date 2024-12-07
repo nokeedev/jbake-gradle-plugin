@@ -32,7 +32,7 @@ final class JBakeAssetsConfiguration implements Action<Configuration> {
 	@Override
 	public void execute(Configuration configuration) {
 		configuration.attributes(it -> {
-			it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"));
+//			it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"));
 			it.attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.class, JBAKE_ASSETS_USAGE_NAME));
 		});
 	}

@@ -6,17 +6,21 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.artifacts.transform.InputArtifact;
+import org.gradle.api.artifacts.transform.TransformAction;
+import org.gradle.api.artifacts.transform.TransformOutputs;
+import org.gradle.api.artifacts.transform.TransformParameters;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.file.CopySpec;
-import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.file.FileTree;
+import org.gradle.api.attributes.Usage;
+import org.gradle.api.file.*;
 import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.util.concurrent.Callable;
 
 /*
@@ -49,14 +53,9 @@ public abstract /*final*/ class JBakeAssetsExtension implements JBakeAssets {
 		incomingAssets.configure(it -> it.extendsFrom(assets.get()));
 		incomingAssets.configure(new JBakeAssetsConfiguration(objects));
 		incomingAssets.configure(new ConfigureJBakeExtensionDescription("Assets", it -> {}));
-		incomingAssets.configure(new ResolveAsDirectoryArtifact("jbake-assets-directory"));
 
 		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) () -> {
-			return incomingAssets.get().getIncoming().artifactView(it -> {
-				it.attributes(attributes -> {
-					attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-assets-directory");
-				});
-			}).getFiles();
+			return incomingAssets.get().getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-assets-directory")).getFiles();
 		});
 
 		getLocation().fileProvider(assembleTask.map(Sync::getDestinationDir));
@@ -98,6 +97,31 @@ public abstract /*final*/ class JBakeAssetsExtension implements JBakeAssets {
 					});
 				});
 			});
+
+			project.getDependencies().registerTransform(UnpackJBakeAssetsTransform.class, spec -> {
+				spec.getFrom().attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, "jbake"));
+				spec.getFrom().attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-directory");
+
+				spec.getTo().attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, "jbake"));
+				spec.getTo().attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-assets-directory");
+			});
+		}
+
+		/*private*/ static abstract /*final*/ class UnpackJBakeAssetsTransform implements TransformAction<TransformParameters.None> {
+			@Inject
+			public UnpackJBakeAssetsTransform() {}
+
+			@InputArtifact
+			public abstract Provider<FileSystemLocation> getInputArtifact();
+
+			@Override
+			public void transform(TransformOutputs outputs) {
+				File artifact = getInputArtifact().get().getAsFile();
+				File contentDir = new File(artifact, "assets");
+				if (contentDir.exists()) {
+					outputs.dir(contentDir);
+				}
+			}
 		}
 	}
 }

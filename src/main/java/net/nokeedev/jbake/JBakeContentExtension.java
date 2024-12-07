@@ -6,17 +6,21 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.artifacts.transform.InputArtifact;
+import org.gradle.api.artifacts.transform.TransformAction;
+import org.gradle.api.artifacts.transform.TransformOutputs;
+import org.gradle.api.artifacts.transform.TransformParameters;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.file.CopySpec;
-import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.file.FileTree;
+import org.gradle.api.attributes.Usage;
+import org.gradle.api.file.*;
 import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.util.concurrent.Callable;
 
 public abstract /*final*/ class JBakeContentExtension implements JBakeContent {
@@ -41,14 +45,9 @@ public abstract /*final*/ class JBakeContentExtension implements JBakeContent {
 		incomingContent.configure(it -> it.extendsFrom(content.get()));
 		incomingContent.configure(new JBakeContentConfiguration(objects));
 		incomingContent.configure(new ConfigureJBakeExtensionDescription("Content", it -> {}));
-		incomingContent.configure(new ResolveAsDirectoryArtifact("jbake-content-directory"));
 
 		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) () -> {
-			return incomingContent.get().getIncoming().artifactView(it -> {
-				it.attributes(attributes -> {
-					attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-content-directory");
-				});
-			}).getFiles();
+			return incomingContent.get().getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-content-directory")).getFiles();
 		});
 
 		getLocation().fileProvider(assembleTask.map(Sync::getDestinationDir));
@@ -90,6 +89,31 @@ public abstract /*final*/ class JBakeContentExtension implements JBakeContent {
 					});
 				});
 			});
+
+			project.getDependencies().registerTransform(UnpackJBakeContentTransform.class, spec -> {
+				spec.getFrom().attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, "jbake"));
+				spec.getFrom().attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-directory");
+
+				spec.getTo().attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, "jbake"));
+				spec.getTo().attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-content-directory");
+			});
+		}
+
+		/*private*/ static abstract /*final*/ class UnpackJBakeContentTransform implements TransformAction<TransformParameters.None> {
+			@Inject
+			public UnpackJBakeContentTransform() {}
+
+			@InputArtifact
+			public abstract Provider<FileSystemLocation> getInputArtifact();
+
+			@Override
+			public void transform(TransformOutputs outputs) {
+				File artifact = getInputArtifact().get().getAsFile();
+				File contentDir = new File(artifact, "content");
+				if (contentDir.exists()) {
+					outputs.dir(contentDir);
+				}
+			}
 		}
 	}
 }

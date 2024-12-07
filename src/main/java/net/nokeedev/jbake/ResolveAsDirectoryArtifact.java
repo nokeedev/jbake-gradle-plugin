@@ -16,12 +16,13 @@
 package net.nokeedev.jbake;
 
 import org.gradle.api.Action;
+import org.gradle.api.artifacts.ArtifactView;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.attributes.Attribute;
 
 import static org.gradle.api.artifacts.type.ArtifactTypeDefinition.DIRECTORY_TYPE;
 
-final class ResolveAsDirectoryArtifact implements Action<Configuration> {
+final class ResolveAsDirectoryArtifact implements Action<ArtifactView.ViewConfiguration> {
 	private static final Attribute<String> ARTIFACT_TYPE_ATTRIBUTE = Attribute.of("artifactType", String.class);
 	private final String artifactType;
 
@@ -30,7 +31,7 @@ final class ResolveAsDirectoryArtifact implements Action<Configuration> {
 	}
 
 	@Override
-	public void execute(Configuration configuration) {
-		configuration.attributes(it -> it.attribute(ARTIFACT_TYPE_ATTRIBUTE, artifactType));
+	public void execute(ArtifactView.ViewConfiguration view) {
+		view.attributes(it -> it.attribute(ARTIFACT_TYPE_ATTRIBUTE, artifactType));
 	}
 }

@@ -34,7 +34,7 @@ final class JBakeTemplatesConfiguration implements Action<Configuration> {
 	@Override
 	public void execute(Configuration configuration) {
 		configuration.attributes(it -> {
-			it.attribute(USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"));
+//			it.attribute(USAGE_ATTRIBUTE, objects.named(Usage.class, "jbake"));
 			it.attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.class, JBAKE_TEMPLATES_USAGE_NAME));
 		});
 	}

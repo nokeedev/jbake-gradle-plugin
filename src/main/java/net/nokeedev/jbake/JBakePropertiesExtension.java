@@ -6,7 +6,13 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.artifacts.transform.InputArtifact;
+import org.gradle.api.artifacts.transform.TransformAction;
+import org.gradle.api.artifacts.transform.TransformOutputs;
+import org.gradle.api.artifacts.transform.TransformParameters;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
+import org.gradle.api.attributes.Usage;
+import org.gradle.api.file.FileSystemLocation;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.model.ObjectFactory;
@@ -40,13 +46,8 @@ public class JBakePropertiesExtension implements JBakeProperties {
 		incomingAssets.configure(it -> it.extendsFrom(properties.get()));
 		incomingAssets.configure(new JBakePropertiesConfiguration(objects));
 		incomingAssets.configure(new ConfigureJBakeExtensionDescription("Configuration", it -> {}));
-//		incomingAssets.configure(new ResolveAsDirectoryArtifact());
 
-		allElements.putAll(incomingAssets.flatMap(it -> it.getIncoming().artifactView(view -> {
-			view.attributes(attributes -> {
-				attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-properties");
-			});
-		}).getFiles().getElements()).map(new TransformEachTransformer<>(new LoadPropertiesFileIfAvailable())).map(new MergeJBakePropertiesTransformer()));
+		allElements.putAll(incomingAssets.flatMap(it -> it.getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-properties")).getFiles().getElements()).map(new TransformEachTransformer<>(new LoadPropertiesFileIfAvailable())).map(new MergeJBakePropertiesTransformer()));
 		allElements.putAll(elements);
 
 		this.assembleTask = tasks.register(names.taskName("assemble", "JBakeProperties"), GenerateJBakeProperties.class);
@@ -101,28 +102,39 @@ public class JBakePropertiesExtension implements JBakeProperties {
 				jbake.getDependencies().getJBakeElements().configure(it -> {
 					it.outgoing(outgoing -> {
 						outgoing.getVariants().create("jbake-properties", variant -> {
+							// Because publish artifacts gets queried early, we can't flat map the output property.
+							//   Instead, we map the task to the property value... it's a workaround to achieve the same thing:
+							//   aka. a provider to the output file with implicit task dependency
 							variant.artifact(properties.assembleTask, t -> t.setType("jbake-properties"));
 						});
 					});
 				});
 			});
-		}
 
-		private Provider<RegularFile> jbakeProperties(Names names, JBakeProperties properties) {
-			final TaskProvider<GenerateJBakeProperties> bakePropertiesTask = tasks.register(names.taskName("bakeProperties"), GenerateJBakeProperties.class, task -> {
-				task.getConfigurations().value(properties.getElements()).disallowChanges();
-				task.getOutputFile().value(layout.getBuildDirectory().file("tmp/" + task.getName() + "/jbake.properties"));
+			project.getDependencies().registerTransform(UnpackJBakePropertiesTransform.class, spec -> {
+				spec.getFrom().attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, "jbake"));
+				spec.getFrom().attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-directory");
+
+				spec.getTo().attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, "jbake"));
+				spec.getTo().attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jbake-properties");
 			});
-			// Because publish artifacts gets queried early, we can't flat map the output property.
-			//   Instead, we map the task to the property value... it's a workaround to achieve the same thing:
-			//   aka. a provider to the output file with implicit task dependency
-			return bakePropertiesTask.map(it -> it.getOutputFile().get());
 		}
 
-		private Action<Configuration> artifactIfExists(Provider<File> fileProvider) {
-			return configuration -> {
-				configuration.getOutgoing().artifact(fileProvider);
-			};
+		/*private*/ static abstract /*final*/ class UnpackJBakePropertiesTransform implements TransformAction<TransformParameters.None> {
+			@Inject
+			public UnpackJBakePropertiesTransform() {}
+
+			@InputArtifact
+			public abstract Provider<FileSystemLocation> getInputArtifact();
+
+			@Override
+			public void transform(TransformOutputs outputs) {
+				File artifact = getInputArtifact().get().getAsFile();
+				File file = new File(artifact, "jbake.properties");
+				if (file.exists()) {
+					outputs.file(file);
+				}
+			}
 		}
 	}
 }
