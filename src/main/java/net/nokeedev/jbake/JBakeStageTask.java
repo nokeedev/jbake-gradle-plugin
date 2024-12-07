@@ -34,9 +34,6 @@ final class JBakeStageTask implements Action<Sync> {
 	@Override
 	public void execute(Sync task) {
 		task.doLast(new AvoidMissingJBakeDirectoryWarnings());
-		task.into("content", spec -> spec.from(extension.getContent().getAsFileTree()));
-		task.into("assets", spec -> spec.from(extension.getAssets().getAsFileTree()));
-		task.into("templates", spec -> spec.from(extension.getTemplates().getAsFileTree()));
 		task.setDestinationDir(project.getLayout().getBuildDirectory().dir("tmp/" + task.getName()).get().getAsFile());
 		task.setIncludeEmptyDirs(false);
 	}
