@@ -24,8 +24,8 @@ import static net.nokeedev.jbake.JBakeExtension.jbake;
 class JBakePlugin implements Plugin<Project> {
 	@Override
 	public void apply(Project project) {
+		project.getPlugins().apply(JBakeBasePlugin.class);
 		new RegisterJBakeArtifactTransforms(project).execute(project.getDependencies());
-		project.getExtensions().add(JBakeExtension.JBAKE_EXTENSION_NAME, JBakeExtensionFactory.forProject(project).create());
 		project.getPlugins().withType(PublishingPlugin.class, ignored -> jbake(project, new RegisterJBakeComponent(project)));
 		jbake(project, new JBakeDefaultLayout(project));
 		project.getTasks().register("bakePreview", JBakeServeTask.class, task -> {
