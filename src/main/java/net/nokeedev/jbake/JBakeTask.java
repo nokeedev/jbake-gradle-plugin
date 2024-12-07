@@ -15,11 +15,17 @@
  */
 package net.nokeedev.jbake;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.MapConfiguration;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileSystemOperations;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.IgnoreEmptyDirectories;
@@ -29,10 +35,21 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.SkipWhenEmpty;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.execution.MultipleBuildFailures;
 import org.gradle.workers.ProcessWorkerSpec;
+import org.gradle.workers.WorkAction;
+import org.gradle.workers.WorkParameters;
 import org.gradle.workers.WorkerExecutor;
+import org.jbake.app.Oven;
+import org.jbake.app.configuration.ConfigUtil;
+import org.jbake.app.configuration.DefaultJBakeConfiguration;
+import org.jbake.app.configuration.JBakeConfiguration;
+import org.jbake.app.configuration.JBakeConfigurationFactory;
 
 import javax.inject.Inject;
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
 
 @SuppressWarnings("UnstableApiUsage")
 public abstract class JBakeTask extends DefaultTask {
@@ -78,5 +95,62 @@ public abstract class JBakeTask extends DefaultTask {
 		parameters.getSourceDirectory().set(getSourceDirectory());
 		parameters.getDestinationDirectory().set(getDestinationDirectory());
 		parameters.getConfigurations().set(getConfigurations());
+	}
+
+	@SuppressWarnings("UnstableApiUsage")
+	/*private*/ abstract static /*final*/ class JBakeTaskWorkAction implements WorkAction<JBakeTaskWorkAction.Parameters> {
+		public interface Parameters extends WorkParameters {
+			DirectoryProperty getSourceDirectory();
+			DirectoryProperty getDestinationDirectory();
+			MapProperty<String, Object> getConfigurations();
+		}
+
+		private static final Logger LOGGER = Logging.getLogger(JBakeTaskWorkAction.class);
+
+		@Inject
+		public JBakeTaskWorkAction() {}
+
+		@Override
+		public void execute() {
+			try {
+				final Oven jbake = new Oven(jbakeConfiguration(getParameters()));
+				jbake.bake();
+				final List<Throwable> errors = jbake.getErrors();
+				if (!errors.isEmpty()) {
+					errors.forEach(it -> LOGGER.error(it.getMessage()));
+					throw new IllegalStateException(new MultipleBuildFailures(errors));
+				}
+			} catch (ConfigurationException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		private static JBakeConfiguration jbakeConfiguration(Parameters parameters) throws ConfigurationException {
+			final JBakeConfigurationFactory factory = new JBakeConfigurationFactory();
+			return factory.createDefaultJbakeConfiguration(
+				sourceDirectory(parameters),
+				destinationDirectory(parameters),
+				configuration(parameters),
+				false);
+		}
+
+		private static File sourceDirectory(Parameters parameters) {
+			return parameters.getSourceDirectory().get().getAsFile();
+		}
+
+		private static File destinationDirectory(Parameters parameters) {
+			return parameters.getDestinationDirectory().get().getAsFile();
+		}
+
+		private static CompositeConfiguration configuration(Parameters parameters) throws ConfigurationException {
+			final CompositeConfiguration result = new CompositeConfiguration();
+			result.addConfiguration(new MapConfiguration(new HashMap<>(parameters.getConfigurations().get())));
+			result.addConfiguration(defaultConfiguration(parameters));
+			return result;
+		}
+
+		private static Configuration defaultConfiguration(Parameters parameters) throws ConfigurationException {
+			return ((DefaultJBakeConfiguration) new ConfigUtil().loadConfig(parameters.getSourceDirectory().get().getAsFile())).getCompositeConfiguration();
+		}
 	}
 }
