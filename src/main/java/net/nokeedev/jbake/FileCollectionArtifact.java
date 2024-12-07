@@ -28,10 +28,12 @@ import static org.gradle.api.artifacts.type.ArtifactTypeDefinition.DIRECTORY_TYP
 final class FileCollectionArtifact implements Action<Configuration> {
 	private final Project project;
 	private final FileCollection files;
+	private final String artifactType;
 
-	public FileCollectionArtifact(Project project, FileCollection files) {
+	public FileCollectionArtifact(Project project, FileCollection files, String artifactType) {
 		this.project = project;
 		this.files = files;
+		this.artifactType = artifactType;
 	}
 
 	@Override
@@ -40,6 +42,7 @@ final class FileCollectionArtifact implements Action<Configuration> {
 		zipTask.configure((task) -> {
 			task.getArchiveClassifier().set(guessClassifier(configuration.getName()));
 			task.getDestinationDirectory().value(project.getLayout().getBuildDirectory().dir("tmp/" + task.getName())).disallowChanges();
+//			task.getArchiveExtension().set(artifactType);
 		});
 		zipTask.configure(task -> task.from(files));
 
@@ -50,7 +53,7 @@ final class FileCollectionArtifact implements Action<Configuration> {
 		stageTask.configure(task -> task.from(files));
 		configuration.getOutgoing().getVariants().create("directory", (variant) -> {
 			variant.artifact(stageTask.map(Sync::getDestinationDir), it -> {
-				it.setType(DIRECTORY_TYPE);
+				it.setType(artifactType + "-directory");
 				it.builtBy(stageTask);
 			});
 		});

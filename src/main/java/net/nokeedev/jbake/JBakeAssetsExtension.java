@@ -48,7 +48,7 @@ public abstract /*final*/ class JBakeAssetsExtension implements JBakeAssets {
 		incomingAssets.configure(it -> it.extendsFrom(assets.get()));
 		incomingAssets.configure(new JBakeAssetsConfiguration(objects));
 		incomingAssets.configure(new ConfigureJBakeExtensionDescription("Assets", it -> {}));
-		incomingAssets.configure(new ResolveAsDirectoryArtifact());
+		incomingAssets.configure(new ResolveAsDirectoryArtifact("jbake-assets-directory"));
 
 		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) incomingAssets::get);
 
@@ -84,7 +84,7 @@ public abstract /*final*/ class JBakeAssetsExtension implements JBakeAssets {
 				assets.assets.configure(it -> it.extendsFrom(jbake.getDependencies().getJBake().get()));
 				jbake.getStageTask().configure(task -> task.into("assets", spec -> spec.from(assets.getAsFileTree())));
 				jbake.getDependencies().getAssetsElements().configure(it -> it.extendsFrom(assets.asConfiguration()));
-				jbake.getDependencies().getAssetsElements().configure(new FileCollectionArtifact(project, assets.getLocation().getAsFileTree()));
+				jbake.getDependencies().getAssetsElements().configure(new FileCollectionArtifact(project, assets.getLocation().getAsFileTree(), "jbake-assets"));
 			});
 		}
 	}

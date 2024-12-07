@@ -55,7 +55,7 @@ final class RegisterJBakeArtifactTransforms implements Action<DependencyHandler>
 		return variantTransform -> {
 			variantTransform.getFrom().attribute(ARTIFACT_FORMAT, ZIP_TYPE);
 			variantTransform.getFrom().attribute(Usage.USAGE_ATTRIBUTE, targetUsage);
-			variantTransform.getTo().attribute(ARTIFACT_FORMAT, DIRECTORY_TYPE);
+			variantTransform.getTo().attribute(ARTIFACT_FORMAT, targetUsage.getName() + "-directory");
 			variantTransform.getTo().attribute(Usage.USAGE_ATTRIBUTE, targetUsage);
 		};
 	}

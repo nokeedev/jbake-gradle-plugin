@@ -23,9 +23,14 @@ import static org.gradle.api.artifacts.type.ArtifactTypeDefinition.DIRECTORY_TYP
 
 final class ResolveAsDirectoryArtifact implements Action<Configuration> {
 	private static final Attribute<String> ARTIFACT_TYPE_ATTRIBUTE = Attribute.of("artifactType", String.class);
+	private final String artifactType;
+
+	public ResolveAsDirectoryArtifact(String artifactType) {
+		this.artifactType = artifactType;
+	}
 
 	@Override
 	public void execute(Configuration configuration) {
-		configuration.attributes(it -> it.attribute(ARTIFACT_TYPE_ATTRIBUTE, DIRECTORY_TYPE));
+		configuration.attributes(it -> it.attribute(ARTIFACT_TYPE_ATTRIBUTE, artifactType));
 	}
 }

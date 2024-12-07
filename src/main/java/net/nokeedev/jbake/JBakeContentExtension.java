@@ -40,7 +40,7 @@ public abstract /*final*/ class JBakeContentExtension implements JBakeContent {
 		incomingContent.configure(it -> it.extendsFrom(content.get()));
 		incomingContent.configure(new JBakeContentConfiguration(objects));
 		incomingContent.configure(new ConfigureJBakeExtensionDescription("Content", it -> {}));
-		incomingContent.configure(new ResolveAsDirectoryArtifact());
+		incomingContent.configure(new ResolveAsDirectoryArtifact("jbake-content-directory"));
 
 		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) incomingContent::get);
 
@@ -76,7 +76,7 @@ public abstract /*final*/ class JBakeContentExtension implements JBakeContent {
 				content.content.configure(it -> it.extendsFrom(jbake.getDependencies().getJBake().get()));
 				jbake.getStageTask().configure(task -> task.into("content", spec -> spec.from(content.getAsFileTree())));
 				jbake.getDependencies().getContentElements().configure(it -> it.extendsFrom(content.asConfiguration()));
-				jbake.getDependencies().getContentElements().configure(new FileCollectionArtifact(project, content.getLocation().getAsFileTree()));
+				jbake.getDependencies().getContentElements().configure(new FileCollectionArtifact(project, content.getLocation().getAsFileTree(), "jbake-content"));
 			});
 		}
 	}

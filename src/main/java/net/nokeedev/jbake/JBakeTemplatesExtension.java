@@ -41,7 +41,7 @@ public abstract class JBakeTemplatesExtension implements JBakeTemplates {
 		incomingTemplates.configure(it -> it.extendsFrom(templates.get()));
 		incomingTemplates.configure(new JBakeTemplatesConfiguration(objects));
 		incomingTemplates.configure(new ConfigureJBakeExtensionDescription("Templates", it -> {}));
-		incomingTemplates.configure(new ResolveAsDirectoryArtifact());
+		incomingTemplates.configure(new ResolveAsDirectoryArtifact("jbake-templates-directory"));
 
 		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) incomingTemplates::get);
 
@@ -77,7 +77,7 @@ public abstract class JBakeTemplatesExtension implements JBakeTemplates {
 				templates.templates.configure(it -> it.extendsFrom(jbake.getDependencies().getJBake().get()));
 				jbake.getStageTask().configure(task -> task.into("templates", spec -> spec.from(templates.getAsFileTree())));
 				jbake.getDependencies().getTemplatesElements().configure(it -> it.extendsFrom(templates.asConfiguration()));
-				jbake.getDependencies().getTemplatesElements().configure(new FileCollectionArtifact(project, templates.getLocation().getAsFileTree()));
+				jbake.getDependencies().getTemplatesElements().configure(new FileCollectionArtifact(project, templates.getLocation().getAsFileTree(), "jbake-templates"));
 			});
 		}
 	}
