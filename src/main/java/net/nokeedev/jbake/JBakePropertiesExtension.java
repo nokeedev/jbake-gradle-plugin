@@ -14,7 +14,6 @@ import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.Usage;
 import org.gradle.api.file.FileSystemLocation;
 import org.gradle.api.file.ProjectLayout;
-import org.gradle.api.file.RegularFile;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Provider;
@@ -24,6 +23,7 @@ import org.gradle.api.tasks.TaskProvider;
 import javax.inject.Inject;
 import java.io.File;
 import java.util.Map;
+import java.util.Set;
 
 public class JBakePropertiesExtension implements JBakeProperties {
 	private final TaskProvider<GenerateJBakeProperties> assembleTask;
@@ -47,11 +47,15 @@ public class JBakePropertiesExtension implements JBakeProperties {
 		incomingAssets.configure(new JBakePropertiesConfiguration(objects));
 		incomingAssets.configure(new ConfigureJBakeExtensionDescription("Configuration", it -> {}));
 
-		allElements.putAll(incomingAssets.flatMap(it -> it.getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-properties")).getFiles().getElements()).map(new TransformEachTransformer<>(new LoadPropertiesFileIfAvailable())).map(new MergeJBakePropertiesTransformer()));
+		Provider<Set<FileSystemLocation>> propertiesFiles = incomingAssets.get().getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-properties")).getFiles().getElements();
+		allElements.putAll(propertiesFiles.map(new TransformEachTransformer<>(new LoadPropertiesFileIfAvailable())).map(new MergeJBakePropertiesTransformer()));
 		allElements.putAll(elements);
 
 		this.assembleTask = tasks.register(names.taskName("assemble", "JBakeProperties"), GenerateJBakeProperties.class);
 		this.assembleTask.configure(task -> {
+			// The statement passed to allElements.putAll is correct but the dependencies are lost within allElements
+			task.dependsOn(propertiesFiles);
+
 			task.getConfigurations().putAll(allElements);
 			task.getOutputFile().fileValue(new File(task.getTemporaryDir(), "jbake.properties"));
 		});
