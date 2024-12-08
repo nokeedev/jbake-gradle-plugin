@@ -46,9 +46,8 @@ public abstract class JBakeTemplatesExtension implements JBakeTemplates {
 		incomingTemplates.configure(new JBakeTemplatesConfiguration(objects));
 		incomingTemplates.configure(new ConfigureJBakeExtensionDescription("Templates", it -> {}));
 
-		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) () -> {
-			return incomingTemplates.get().getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-templates-directory")).getFiles();
-		});
+		this.files = objects.fileCollection().from(assembleTask)
+			.from(incomingTemplates.get().getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-templates-directory")).getFiles());
 
 		getLocation().fileProvider(assembleTask.map(Sync::getDestinationDir));
 		getLocation().disallowChanges();

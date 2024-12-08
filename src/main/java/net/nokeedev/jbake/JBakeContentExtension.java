@@ -46,9 +46,8 @@ public abstract /*final*/ class JBakeContentExtension implements JBakeContent {
 		incomingContent.configure(new JBakeContentConfiguration(objects));
 		incomingContent.configure(new ConfigureJBakeExtensionDescription("Content", it -> {}));
 
-		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) () -> {
-			return incomingContent.get().getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-content-directory")).getFiles();
-		});
+		this.files = objects.fileCollection().from(assembleTask)
+			.from(incomingContent.get().getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-content-directory")).getFiles());
 
 		getLocation().fileProvider(assembleTask.map(Sync::getDestinationDir));
 		getLocation().disallowChanges();

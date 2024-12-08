@@ -54,9 +54,8 @@ public abstract /*final*/ class JBakeAssetsExtension implements JBakeAssets {
 		incomingAssets.configure(new JBakeAssetsConfiguration(objects));
 		incomingAssets.configure(new ConfigureJBakeExtensionDescription("Assets", it -> {}));
 
-		this.files = objects.fileCollection().from(assembleTask).from((Callable<?>) () -> {
-			return incomingAssets.get().getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-assets-directory")).getFiles();
-		});
+		this.files = objects.fileCollection().from(assembleTask)
+			.from(incomingAssets.get().getIncoming().artifactView(new ResolveAsDirectoryArtifact("jbake-assets-directory")).getFiles());
 
 		getLocation().fileProvider(assembleTask.map(Sync::getDestinationDir));
 		getLocation().disallowChanges();
