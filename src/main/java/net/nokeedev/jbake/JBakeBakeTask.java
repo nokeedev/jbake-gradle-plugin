@@ -45,12 +45,12 @@ final class JBakeBakeTask implements Action<JBakeTask> {
 //			task.getConfigurations().putAll(extension.getConfigurations().getAllElements());
 			task.getConfigurations().put("working.directory", extension.getStageTask().map(this::relativeToProjectDirectory));
 			task.getClasspath()
-				.from(asciidoctor("2.4.3"))
-				.from(groovyTemplates("3.0.7"))
+				.from(asciidoctor("2.5.7"))
+				.from(groovyTemplates("3.0.9"))
 				.from(flexmarkTemplates("0.62.2"))
 				.from(freemarkerTemplates("2.3.31"))
 				.from(pegdownTemplates("1.6.0"))
-				.from(thymeleafTemplates("3.0.12.RELEASE"))
+				.from(thymeleafTemplates("3.0.14.RELEASE"))
 				.from(jade4jTemplates("1.3.2"))
 				.from(pebbleTemplates("3.1.5"))
 			;

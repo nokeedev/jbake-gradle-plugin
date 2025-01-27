@@ -15,10 +15,6 @@
  */
 package net.nokeedev.jbake;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.MapConfiguration;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
@@ -27,29 +23,25 @@ import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.provider.MapProperty;
-import org.gradle.api.tasks.Classpath;
-import org.gradle.api.tasks.IgnoreEmptyDirectories;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.SkipWhenEmpty;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.*;
 import org.gradle.execution.MultipleBuildFailures;
 import org.gradle.workers.ProcessWorkerSpec;
 import org.gradle.workers.WorkAction;
 import org.gradle.workers.WorkParameters;
 import org.gradle.workers.WorkerExecutor;
 import org.jbake.app.Oven;
-import org.jbake.app.configuration.ConfigUtil;
-import org.jbake.app.configuration.DefaultJBakeConfiguration;
 import org.jbake.app.configuration.JBakeConfiguration;
 import org.jbake.app.configuration.JBakeConfigurationFactory;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.util.HashMap;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Properties;
 
 @SuppressWarnings("UnstableApiUsage")
 public abstract class JBakeTask extends DefaultTask {
@@ -112,20 +104,16 @@ public abstract class JBakeTask extends DefaultTask {
 
 		@Override
 		public void execute() {
-			try {
-				final Oven jbake = new Oven(jbakeConfiguration(getParameters()));
-				jbake.bake();
-				final List<Throwable> errors = jbake.getErrors();
-				if (!errors.isEmpty()) {
-					errors.forEach(it -> LOGGER.error(it.getMessage()));
-					throw new IllegalStateException(new MultipleBuildFailures(errors));
-				}
-			} catch (ConfigurationException e) {
-				throw new RuntimeException(e);
+			final Oven jbake = new Oven(jbakeConfiguration(getParameters()));
+			jbake.bake();
+			final List<Throwable> errors = jbake.getErrors();
+			if (!errors.isEmpty()) {
+				errors.forEach(it -> LOGGER.error(it.getMessage()));
+				throw new IllegalStateException(new MultipleBuildFailures(errors));
 			}
 		}
 
-		private static JBakeConfiguration jbakeConfiguration(Parameters parameters) throws ConfigurationException {
+		private static JBakeConfiguration jbakeConfiguration(Parameters parameters) {
 			final JBakeConfigurationFactory factory = new JBakeConfigurationFactory();
 			return factory.createDefaultJbakeConfiguration(
 				sourceDirectory(parameters),
@@ -142,15 +130,22 @@ public abstract class JBakeTask extends DefaultTask {
 			return parameters.getDestinationDirectory().get().getAsFile();
 		}
 
-		private static CompositeConfiguration configuration(Parameters parameters) throws ConfigurationException {
-			final CompositeConfiguration result = new CompositeConfiguration();
-			result.addConfiguration(new MapConfiguration(new HashMap<>(parameters.getConfigurations().get())));
-			result.addConfiguration(defaultConfiguration(parameters));
-			return result;
-		}
+		private static File configuration(Parameters parameters) {
+			Properties properties = new Properties();
+			parameters.getConfigurations().get().forEach((k, v) -> {
+				properties.put(k, v.toString());
+			});
 
-		private static Configuration defaultConfiguration(Parameters parameters) throws ConfigurationException {
-			return ((DefaultJBakeConfiguration) new ConfigUtil().loadConfig(parameters.getSourceDirectory().get().getAsFile())).getCompositeConfiguration();
+			try {
+				final Path result = Files.createTempFile("jbake", ".properties");
+				try (OutputStream outStream = Files.newOutputStream(result)) {
+					properties.store(outStream, null);
+				}
+
+				return result.toFile();
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
 		}
 	}
 }

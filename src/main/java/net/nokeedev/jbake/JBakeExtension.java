@@ -16,22 +16,18 @@
 package net.nokeedev.jbake;
 
 import org.gradle.api.Action;
-import org.gradle.api.NamedDomainObjectCollectionSchema;
 import org.gradle.api.Project;
-import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.CopySpec;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -52,7 +48,7 @@ public abstract class JBakeExtension implements ExtensionAware {
 		this.bakeTask = tasks.register(names.taskName("bake"), JBakeTask.class);
 		this.dependencies = new JBakeDependencies(project, names);
 		this.jbakeVersionToUse = project.getObjects().property(String.class);
-		this.jbakeVersionToUse.convention("2.6.7");
+		this.jbakeVersionToUse.convention("2.7.0-rc.7");
 
 		dependencies(new AttachJBakeArtifacts(project, this, names));
 		Optional.of(project.getGroup().toString())
